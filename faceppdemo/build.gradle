@@ -71,4 +71,14 @@ dependencies {
     compile(name: 'MGLicenseManagerSDK-0.3.1', ext: 'aar')
     compile(name: 'MGFaceppSDK-0.5.2', ext: 'aar')
 //    compile project(':sdk')
+
+    //glide
+    compile 'com.github.bumptech.glide:glide:3.7.0'
+
+    // ok http
+    compile "com.squareup.okhttp3:okhttp:3.11.0"
+    compile "com.squareup.okhttp3:logging-interceptor:3.11.0"
+    compile 'com.google.code.gson:gson:2.7'
+
+
 }

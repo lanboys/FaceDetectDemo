@@ -17,7 +17,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
@@ -29,6 +28,10 @@ import android.widget.Toast;
 import com.facepp.demo.bean.FaceActionInfo;
 import com.facepp.demo.bean.FeatureInfo;
 import com.facepp.demo.facecompare.FaceCompareManager;
+import com.facepp.demo.load.BitmapUtil;
+import com.facepp.demo.load.GetImageCacheCallBack;
+import com.facepp.demo.load.ImageLoader;
+import com.facepp.demo.load.LogUtil;
 import com.facepp.demo.mediacodec.MediaHelper;
 import com.facepp.demo.util.CameraMatrix;
 import com.facepp.demo.util.ConUtil;
@@ -42,12 +45,15 @@ import com.facepp.demo.util.Screen;
 import com.facepp.demo.util.SensorEventUtil;
 import com.megvii.facepp.sdk.Facepp;
 
+import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+import static com.facepp.demo.CollectActivity.bitmap2Bytes;
 
 public class OpenglActivity extends Activity
         implements PreviewCallback, Renderer, SurfaceTexture.OnFrameAvailableListener {
@@ -83,6 +89,10 @@ public class OpenglActivity extends Activity
     private ImageView imgIcon;
 
     private MediaHelper mMediaHelper;
+    protected final LogUtil log = LogUtil.getLogUtil(getClass(), LogUtil.LOG_VERBOSE);
+
+    String url = "https://gss0.bdstatic.com/-4o3dSag_xI4khGkpoWK1HF6hhy/baike/c0%3Dbaike92%2C5%2C5%2C92%2C30/sign=775f519ac08065386fe7ac41f6b4ca21/fd039245d688d43f63d84526771ed21b0ff43bf5.jpg";
+    private byte[] imageData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,6 +115,14 @@ public class OpenglActivity extends Activity
         getWindowManager().getDefaultDisplay().getMetrics(outMetrics);
         screenWidth = outMetrics.widthPixels;
         screenHeight = outMetrics.heightPixels;
+
+        ImageLoader.getInstance()
+                .loadImageCallBackFile(null, url, new GetImageCacheCallBack() {
+                    @Override
+                    public void onGetImageCacheCallBack(boolean isSuccess, String imageUrl, File file, BitmapUtil.BitmapResult bitmapResult) {
+                        OpenglActivity.this.imageData = bitmap2Bytes(bitmapResult.bitmap);
+                    }
+                });
 
     }
 
@@ -285,7 +303,7 @@ public class OpenglActivity extends Activity
             facepp.setFaceppConfig(faceppConfig);
 
             String version = facepp.getVersion();
-            Log.d("ceshi", "onResume:version:" + version);
+            log.i( "onResume:version:" + version);
         } else {
             mDialogUtil.showDialog(getResources().getString(R.string.camera_error));
         }
@@ -348,11 +366,18 @@ public class OpenglActivity extends Activity
         else if (orientation == 3)
             rotation = 360 - Angle;
 
-
         setConfig(rotation);
 
-        final Facepp.Face[] faces = facepp.detect(imgData, width, height, Facepp.IMAGEMODE_NV21);
+        Facepp.Face[] faces1 = null;
+        if (imageData != null) {
+            faces1 = facepp.detect(imageData, width, height, Facepp.IMAGEMODE_NV21);
+        } else {
+            faces1 = facepp.detect(imgData, width, height, Facepp.IMAGEMODE_NV21);
+        }
+        final Facepp.Face[] faces=faces1;
+        //final Facepp.Face[] faces = facepp.detect(imgData, width, height, Facepp.IMAGEMODE_NV21);
         final long algorithmTime = System.currentTimeMillis() - faceDetectTime_action;
+        log.i("onPreviewFrame(): face.size: " + faces.length);
         if (faces != null) {
             long actionMaticsTime = System.currentTimeMillis();
             ArrayList<ArrayList> pointsOpengl = new ArrayList<ArrayList>();
@@ -617,7 +642,7 @@ public class OpenglActivity extends Activity
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         // TODO Auto-generated method stub
-//		Log.d("ceshi", "onFrameAvailable");
+//		log.i( "onFrameAvailable");
         mGlSurfaceView.requestRender();
     }
 
@@ -672,7 +697,7 @@ public class OpenglActivity extends Activity
     public void onDrawFrame(GL10 gl) {
 
         final long actionTime = System.currentTimeMillis();
-//		Log.w("ceshi", "onDrawFrame===");
+//		log.i( "onDrawFrame===");
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);// 清除屏幕和深度缓存
         float[] mtx = new float[16];
         mSurface.getTransformMatrix(mtx);
@@ -720,7 +745,7 @@ public class OpenglActivity extends Activity
         rectf.right = right;
         rectf.bottom = bottom;
 
-        Log.d("ceshi", "calRect: " + rectf);
+        log.i( "calRect: " + rectf);
         return rectf;
     }
 

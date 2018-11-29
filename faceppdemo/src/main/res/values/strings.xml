@@ -47,6 +47,7 @@
     <string name="modif_name">修改名称</string>
     <string name="modif_name_fail">请输入名称</string>
     <string name="face_compare_title">人脸比对设置</string>
+    <string name="title_activity_collect">CollectActivity</string>
 
 
 </resources>
