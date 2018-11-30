@@ -34,7 +34,8 @@ public class CollectActivity extends Activity implements View.OnClickListener {
 
     protected final LogUtil log = LogUtil.getLogUtil(getClass(), LogUtil.LOG_VERBOSE);
     private static final int IMAGE_SIZE = 50;
-    private static final int THREAD_SIZE = 20;
+    private static final int THREAD_SIZE = 2;
+    //private static final int THREAD_SIZE = Runtime.getRuntime().availableProcessors() * 2 + 1;
     private Facepp facepp;
     private Button btnStart;
     private ImageView ivImage;
@@ -68,7 +69,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
         btnStart.setOnClickListener(this);
 
         facepp = new Facepp();
-        String errorCode = facepp.init(this, ConUtil.getFileContent(this, R.raw.megviifacepp_0_5_2_model), 1);
+        String errorCode = facepp.init(this, ConUtil.getFileContent(this, R.raw.megviifacepp_0_5_2_model));
         log.i("onCreate() errorCode: " + errorCode);
 
         mExecutor = Executors.newFixedThreadPool(THREAD_SIZE);
@@ -109,7 +110,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     }
 
     public Facepp.Face[] detect(byte[] imageData, int width, int height) {
-        return facepp.detect(imageData, width, height, Facepp.IMAGEMODE_NV21);
+        return facepp.detect(imageData, width, height, Facepp.IMAGEMODE_RGBA);
     }
 
     private boolean isStart = false;
@@ -202,6 +203,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
 
         public void run() {
             //log.i("run() thread: " + Thread.currentThread().getName());
+            log.e("run() --------- ---------- ---------");
             long startTime = System.currentTimeMillis();
             final File file;
             try {
@@ -210,6 +212,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
                         .downloadOnly(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
                         .get();
 
+                log.e("run() 加载图片耗时： " + (System.currentTimeMillis() - startTime));
                 BitmapUtil.BitmapResult bitmapResult = null;
 
                 if (file != null) {
@@ -219,8 +222,9 @@ public class CollectActivity extends Activity implements View.OnClickListener {
                     log.i("run() path: " + path);
 
                     bitmapResult = BitmapUtil.decodeSampledBitmapFromFile(path, 0, 0, 0);
+                    Facepp.Face[] detect = detect(ConUtilNew.getPixelsRGBA(bitmapResult.bitmap), bitmapResult.realWidth, bitmapResult.realHeight);
 
-                    Facepp.Face[] detect = detect(bitmap2Bytes(bitmapResult.bitmap), bitmapResult.realWidth, bitmapResult.realHeight);
+                    log.e("run() 识别耗时： " + (System.currentTimeMillis() - startTime));
                     log.i("run() face size:" + detect.length);
                     for (Facepp.Face face : detect) {
                         PointF[] points = face.points;
