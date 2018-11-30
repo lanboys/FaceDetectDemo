@@ -45,6 +45,7 @@
             android:name=".CollectActivity"
             android:label="@string/title_activity_collect">
         </activity>
+        <activity android:name=".SimpleImageActivity"/>
     </application>
 
 </manifest>
